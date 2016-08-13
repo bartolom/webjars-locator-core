@@ -142,8 +142,21 @@ public class WebJarAssetLocator {
         return reversedAssetPath.toString();
     }
 
+    private static WebJarFunction<String, String> noopTweak() {
+    	return new WebJarFunction<String, String>() {
+
+			@Override
+			public String apply(String t) {
+				return t;
+			}
+    		
+    	};
+    }
+    
     final SortedMap<String, String> fullPathIndex;
 
+    final WebJarFunction<String, String> tweak;
+    
     /**
      * Convenience constructor that will form a locator for all resources on the
      * current class path.
@@ -160,6 +173,13 @@ public class WebJarAssetLocator {
      */
     public WebJarAssetLocator(final SortedMap<String, String> fullPathIndex) {
         this.fullPathIndex = fullPathIndex;
+        this.tweak = noopTweak();
+    }
+    
+    public WebJarAssetLocator(final SortedMap<String, String> fullPathIndex,
+    		WebJarFunction<String, String> tweak) {
+        this.fullPathIndex = fullPathIndex;
+        this.tweak = tweak;
     }
 
     public WebJarAssetLocator(Set<String> assetPaths) {
@@ -168,6 +188,7 @@ public class WebJarAssetLocator {
         for (String assetPath : assetPaths) {
             fullPathIndex.put(reversePath(assetPath), assetPath);
         }
+        this.tweak = noopTweak();
     }
 
     private String throwNotFoundException(final String partialPath) {
@@ -197,7 +218,7 @@ public class WebJarAssetLocator {
      * @return a fully qualified path to the resource
      */
     public String getFullPath(final String webjar, final String partialPath) {
-        return getFullPath(filterPathIndexByPrefix(fullPathIndex, WEBJARS_PATH_PREFIX + "/" + webjar + "/"), partialPath);
+        return getFullPath(filterPathIndexByPrefix(fullPathIndex, WEBJARS_PATH_PREFIX + "/" + tweak.apply(webjar) + "/"), partialPath);
     }
 
     /**
